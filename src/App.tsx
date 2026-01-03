@@ -159,7 +159,7 @@ export default function App() {
                 <ReferenceArea
                   y1={0}
                   y2={55}
-                  fill="rgba(52, 211, 153, 0.08)" // a soft green-ish tint
+                  fill="rgba(34, 197, 94, 0.16)" // brighter green for contrast
                   ifOverflow="extendDomain"
                 />
 
@@ -167,7 +167,7 @@ export default function App() {
                 <ReferenceArea
                   y1={55}
                   y2={70}
-                  fill="rgba(250, 204, 21, 0.08)" // soft yellow-ish tint
+                  fill="rgba(251, 191, 36, 0.18)" // brighter amber for contrast
                   ifOverflow="extendDomain"
                 />
 
@@ -175,7 +175,7 @@ export default function App() {
                 <ReferenceArea
                   y1={70}
                   y2={85}
-                  fill="rgba(251, 146, 60, 0.09)" // soft orange-ish tint
+                  fill="rgba(249, 115, 22, 0.18)" // brighter orange for contrast
                   ifOverflow="extendDomain"
                 />
 
@@ -183,7 +183,7 @@ export default function App() {
                 <ReferenceArea
                   y1={85}
                   y2={100}
-                  fill="rgba(239, 68, 68, 0.09)" // soft red-ish tint
+                  fill="rgba(239, 68, 68, 0.18)" // brighter red for contrast
                   ifOverflow="extendDomain"
                 />
 
@@ -252,7 +252,7 @@ export default function App() {
               <span
                 style={{
                   ...styles.swatch,
-                  background: "rgba(52, 211, 153, 0.22)",
+                  background: "rgba(34, 197, 94, 0.38)",
                 }}
               />
               <span>Stable</span>
@@ -261,7 +261,7 @@ export default function App() {
               <span
                 style={{
                   ...styles.swatch,
-                  background: "rgba(250, 204, 21, 0.22)",
+                  background: "rgba(251, 191, 36, 0.4)",
                 }}
               />
               <span>Reform pressure</span>
@@ -270,7 +270,7 @@ export default function App() {
               <span
                 style={{
                   ...styles.swatch,
-                  background: "rgba(251, 146, 60, 0.22)",
+                  background: "rgba(249, 115, 22, 0.4)",
                 }}
               />
               <span>Protest zone</span>
@@ -279,7 +279,7 @@ export default function App() {
               <span
                 style={{
                   ...styles.swatch,
-                  background: "rgba(239, 68, 68, 0.22)",
+                  background: "rgba(239, 68, 68, 0.4)",
                 }}
               />
               <span>Pre-revolution risk</span>
