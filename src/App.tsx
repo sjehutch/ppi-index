@@ -357,19 +357,27 @@ export default function App() {
     setZoomRange({ startIndex, endIndex });
   };
 
-  const handleMouseDown = (event: { activeLabel?: number }) => {
-    if (typeof event.activeLabel !== "number") {
+  const handleMouseDown = (event: { activeLabel?: number | string }) => {
+    const activeLabel =
+      typeof event.activeLabel === "number"
+        ? event.activeLabel
+        : Number(event.activeLabel);
+    if (!Number.isFinite(activeLabel)) {
       return;
     }
-    setDragStart(event.activeLabel);
-    setDragEnd(event.activeLabel);
+    setDragStart(activeLabel);
+    setDragEnd(activeLabel);
   };
 
-  const handleMouseMove = (event: { activeLabel?: number }) => {
-    if (dragStart === null || typeof event.activeLabel !== "number") {
+  const handleMouseMove = (event: { activeLabel?: number | string }) => {
+    const activeLabel =
+      typeof event.activeLabel === "number"
+        ? event.activeLabel
+        : Number(event.activeLabel);
+    if (dragStart === null || !Number.isFinite(activeLabel)) {
       return;
     }
-    setDragEnd(event.activeLabel);
+    setDragEnd(activeLabel);
   };
 
   const finalizeZoom = () => {
