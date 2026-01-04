@@ -1,3 +1,20 @@
+# Political Pressure Index (PPI) Demo
+
+This is a small, dark-mode-only React demo that visualizes a Political Pressure
+Index (PPI) timeline from 1850 to today.
+
+What is PPI?
+- A simple 0 to 100 score that reflects how much social and economic pressure
+  might be building in a society. Higher means more pressure.
+
+What is the AI Wildcard?
+- A small adjustment that stays near zero before 2010 and varies after, meant
+  to represent how AI could nudge pressure up or down.
+
+Important:
+- The dataset is illustrative and does not represent exact historical facts or
+  statistics.
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
