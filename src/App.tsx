@@ -39,6 +39,21 @@ type PpiPoint = {
   aiHigh?: number; // AI increases pressure path
 };
 
+const COLORS = {
+  stable: "rgba(34, 211, 238, 0.2)",
+  reform: "rgba(129, 140, 248, 0.22)",
+  protest: "rgba(251, 191, 36, 0.26)",
+  risk: "rgba(248, 113, 113, 0.28)",
+  threshold: "rgba(255, 255, 255, 0.35)",
+  baseLine: "#f8fafc",
+  aiLow: "#22d3ee",
+  aiHigh: "#f59e0b",
+  grid: "rgba(255, 255, 255, 0.22)",
+  eventGlow: "rgba(255, 255, 255, 0.35)",
+  eventDot: "#ffffff",
+  eventStroke: "#0b0b10",
+};
+
 type PpiAnchor = {
   year: number;
   ppi: number;
@@ -170,11 +185,14 @@ const EVENT_LABELS: Record<number, string[]> = EVENTS.reduce(
   {} as Record<number, string[]>
 );
 
-const EVENT_POINTS = EVENTS.map((event) => ({
-  year: event.year,
-  eventY: 98,
-  label: event.label,
-}));
+const EVENT_POINTS = EVENTS.map((event) => {
+  const point = DATA.find((p) => p.year === event.year);
+  return {
+    year: event.year,
+    eventY: point?.ppi ?? 98,
+    label: event.label,
+  };
+});
 
 const DECADE_DRIVERS: Array<{ year: number; label: string }> = [
   { year: 1900, label: "Income↓, Labor↑ (industrial churn)" },
@@ -191,6 +209,14 @@ const DECADE_DRIVERS: Array<{ year: number; label: string }> = [
   { year: 2010, label: "Income↓, Labor↑ (post-crisis)" },
   { year: 2020, label: "Housing↑, Trust↓ (pandemic/inflation)" },
 ];
+
+const DECADE_DRIVER_LABELS: Record<number, string> = DECADE_DRIVERS.reduce(
+  (acc, driver) => {
+    acc[driver.year] = driver.label;
+    return acc;
+  },
+  {} as Record<number, string>
+);
 
 /**
  * Little helper: round tooltip numbers nicely.
@@ -224,6 +250,10 @@ function renderTooltip({
   }
   const year = typeof label === "number" ? label : Number(label);
   const eventsForYear = Number.isFinite(year) ? EVENT_LABELS[year] : undefined;
+  const decade =
+    Number.isFinite(year) ? Math.floor(Number(year) / 10) * 10 : undefined;
+  const decadeDriver =
+    decade !== undefined ? DECADE_DRIVER_LABELS[decade] : undefined;
   const series = (payload ?? []).filter(
     (entry) =>
       entry.dataKey &&
@@ -262,7 +292,43 @@ function renderTooltip({
           })}
         </div>
       )}
+      {decadeDriver && (
+        <div style={styles.tooltipSection}>
+          <div style={styles.tooltipLabel}>Decade drivers</div>
+          <div style={styles.tooltipEvent}>{decadeDriver}</div>
+        </div>
+      )}
     </div>
+  );
+}
+
+function EventDot({
+  cx,
+  cy,
+}: {
+  cx?: number;
+  cy?: number;
+}): ReactNode {
+  if (cx === undefined || cy === undefined) {
+    return null;
+  }
+  return (
+    <>
+      <circle
+        cx={cx}
+        cy={cy}
+        r={9}
+        fill={COLORS.eventGlow}
+      />
+      <circle
+        cx={cx}
+        cy={cy}
+        r={5}
+        fill={COLORS.eventDot}
+        stroke={COLORS.eventStroke}
+        strokeWidth={2}
+      />
+    </>
   );
 }
 
@@ -300,7 +366,11 @@ export default function App() {
                 data={DATA}
                 margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
               >
-                <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.15} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={COLORS.grid}
+                  strokeOpacity={0.5}
+                />
 
                 {/* X axis = year */}
                 <XAxis
@@ -333,7 +403,7 @@ export default function App() {
                 <ReferenceArea
                   y1={0}
                   y2={55}
-                  fill="rgba(34, 197, 94, 0.16)" // brighter green for contrast
+                  fill={COLORS.stable}
                   ifOverflow="extendDomain"
                 />
 
@@ -341,7 +411,7 @@ export default function App() {
                 <ReferenceArea
                   y1={55}
                   y2={70}
-                  fill="rgba(251, 191, 36, 0.18)" // brighter amber for contrast
+                  fill={COLORS.reform}
                   ifOverflow="extendDomain"
                 />
 
@@ -349,7 +419,7 @@ export default function App() {
                 <ReferenceArea
                   y1={70}
                   y2={85}
-                  fill="rgba(249, 115, 22, 0.18)" // brighter orange for contrast
+                  fill={COLORS.protest}
                   ifOverflow="extendDomain"
                 />
 
@@ -357,65 +427,29 @@ export default function App() {
                 <ReferenceArea
                   y1={85}
                   y2={100}
-                  fill="rgba(239, 68, 68, 0.18)" // brighter red for contrast
+                  fill={COLORS.risk}
                   ifOverflow="extendDomain"
                 />
 
                 {/* Horizontal threshold lines */}
-                <ReferenceLine y={55} stroke="rgba(255,255,255,0.18)" />
-                <ReferenceLine y={70} stroke="rgba(255,255,255,0.18)" />
-                <ReferenceLine y={85} stroke="rgba(255,255,255,0.18)" />
-
-                {/* Event markers (spark events) */}
-                {EVENTS.map((e) => (
-                  <ReferenceLine
-                    key={e.year}
-                    x={e.year}
-                    stroke="rgba(255,255,255,0.16)"
-                    strokeDasharray="4 6"
-                    label={{
-                      value: e.label,
-                      position: "insideTopLeft",
-                      fill: "rgba(255,255,255,0.55)",
-                      fontSize: 11,
-                      angle: -90,
-                      offset: 10,
-                    }}
-                  />
-                ))}
+                <ReferenceLine y={55} stroke={COLORS.threshold} />
+                <ReferenceLine y={70} stroke={COLORS.threshold} />
+                <ReferenceLine y={85} stroke={COLORS.threshold} />
 
                 <Scatter
                   data={EVENT_POINTS}
                   dataKey="eventY"
                   name="Events"
-                  fill="rgba(250, 204, 21, 0.9)"
-                  stroke="rgba(17, 24, 39, 0.6)"
-                  strokeWidth={1}
+                  shape={EventDot}
+                  isAnimationActive={false}
                 />
-
-                {/* Decade drivers: tied to framework inputs */}
-                {DECADE_DRIVERS.map((d) => (
-                  <ReferenceLine
-                    key={`driver-${d.year}`}
-                    x={d.year}
-                    stroke="rgba(125,211,252,0.18)"
-                    strokeDasharray="2 8"
-                    label={{
-                      value: d.label,
-                      position: "insideBottomLeft",
-                      fill: "rgba(125,211,252,0.65)",
-                      fontSize: 10,
-                      angle: -90,
-                      offset: 10,
-                    }}
-                  />
-                ))}
 
                 {/* ===== Main PPI line ===== */}
                 <Line
                   type="monotone"
                   dataKey="ppi"
                   name="Base PPI"
+                  stroke={COLORS.baseLine}
                   strokeWidth={3}
                   dot={{ r: 2.5 }}
                   activeDot={{ r: 5 }}
@@ -430,6 +464,7 @@ export default function App() {
                   type="monotone"
                   dataKey="aiLow"
                   name="AI lowers pressure (cone)"
+                  stroke={COLORS.aiLow}
                   strokeWidth={2}
                   strokeDasharray="6 6"
                   dot={false}
@@ -439,6 +474,7 @@ export default function App() {
                   type="monotone"
                   dataKey="aiHigh"
                   name="AI raises pressure (cone)"
+                  stroke={COLORS.aiHigh}
                   strokeWidth={2}
                   strokeDasharray="6 6"
                   dot={false}
@@ -453,7 +489,7 @@ export default function App() {
               <span
                 style={{
                   ...styles.swatch,
-                  background: "rgba(34, 197, 94, 0.38)",
+                  background: COLORS.stable,
                 }}
               />
               <span>Stable</span>
@@ -462,7 +498,7 @@ export default function App() {
               <span
                 style={{
                   ...styles.swatch,
-                  background: "rgba(251, 191, 36, 0.4)",
+                  background: COLORS.reform,
                 }}
               />
               <span>Reform pressure</span>
@@ -471,7 +507,7 @@ export default function App() {
               <span
                 style={{
                   ...styles.swatch,
-                  background: "rgba(249, 115, 22, 0.4)",
+                  background: COLORS.protest,
                 }}
               />
               <span>Protest zone</span>
@@ -480,7 +516,7 @@ export default function App() {
               <span
                 style={{
                   ...styles.swatch,
-                  background: "rgba(239, 68, 68, 0.4)",
+                  background: COLORS.risk,
                 }}
               />
               <span>Pre-revolution risk</span>
@@ -509,7 +545,8 @@ const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: "100vh",
     width: "100%",
-    background: "#0b0b10",
+    background:
+      "radial-gradient(circle at top, rgba(255,255,255,0.12), transparent 45%), #06070a",
     color: "rgba(255,255,255,0.92)",
     display: "flex",
     flexDirection: "column",
@@ -560,8 +597,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   card: {
     borderRadius: 18,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(255,255,255,0.04)",
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: "rgba(255,255,255,0.06)",
+    backdropFilter: "blur(16px)",
     padding: 16,
     boxShadow: "0 20px 50px rgba(0,0,0,0.35)",
   },
