@@ -1,6 +1,8 @@
 // src/App.tsx
 import type { ReactNode } from "react";
 
+import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
+
 import {
   CartesianGrid,
   Legend,
@@ -14,6 +16,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { TooltipProps } from "recharts";
 
 /**
  * Like you're 10:
@@ -235,16 +238,7 @@ function renderTooltip({
   active,
   label,
   payload,
-}: {
-  active?: boolean;
-  label?: number | string;
-  payload?: Array<{
-    name?: string;
-    value?: number;
-    dataKey?: string;
-    payload?: { label?: string };
-  }>;
-}): ReactNode {
+}: TooltipProps<ValueType, NameType>): ReactNode {
   if (!active) {
     return null;
   }
