@@ -38,9 +38,13 @@ function PpiTooltip({
   const confidence = primary.payload?.confidence ?? "unknown";
   const aiModifier = primary.payload?.aiModifier ?? 0;
   const year = typeof label === "number" ? label : Number(label);
-  const eventsForYear = Number.isFinite(year)
-    ? ppiEvents.filter((event) => event.year === year)
-    : [];
+  const decadeStart = Number.isFinite(year) ? Math.floor(year / 10) * 10 : null;
+  const eventsForYear =
+    decadeStart !== null
+      ? ppiEvents.filter(
+          (event) => event.year >= decadeStart && event.year < decadeStart + 10
+        )
+      : [];
 
   return (
     <div style={styles.tooltip}>
@@ -57,11 +61,13 @@ function PpiTooltip({
       </div>
       {eventsForYear.length > 0 && (
         <div style={styles.tooltipSection}>
-          <div style={styles.tooltipLabel}>Events</div>
+          <div style={styles.tooltipLabel}>
+            Events ({decadeStart}s)
+          </div>
           {eventsForYear.map((event) => (
             <div key={`${event.year}-${event.label}`} style={styles.tooltipEvent}>
               <div style={styles.tooltipEventTitle}>
-                {event.label} • {event.category}
+                {event.year} · {event.label} · {event.category}
               </div>
               <div style={styles.tooltipEventDesc}>{event.description}</div>
             </div>

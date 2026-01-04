@@ -240,6 +240,14 @@ export const ppiEvents: PpiEvent[] = [
     confidence: "low",
   },
   {
+    year: 1918,
+    label: "World War I ends",
+    category: "war",
+    description:
+      "Post-war adjustment reshaped labor, trust, and political expectations.",
+    confidence: "low",
+  },
+  {
     year: 1929,
     label: "Market crash",
     category: "economic",
@@ -264,6 +272,14 @@ export const ppiEvents: PpiEvent[] = [
     confidence: "low",
   },
   {
+    year: 1945,
+    label: "World War II ends",
+    category: "war",
+    description:
+      "Post-war rebuilding redirected institutions and long-term social priorities.",
+    confidence: "low",
+  },
+  {
     year: 1956,
     label: "Automation accelerates",
     category: "technology",
@@ -280,11 +296,27 @@ export const ppiEvents: PpiEvent[] = [
     confidence: "medium",
   },
   {
+    year: 1968,
+    label: "Vietnam War strain",
+    category: "war",
+    description:
+      "Prolonged conflict fed polarization and raised questions of trust.",
+    confidence: "medium",
+  },
+  {
     year: 1973,
     label: "Oil shock",
     category: "economic",
     description:
       "Energy price spikes squeezed household budgets and business costs.",
+    confidence: "medium",
+  },
+  {
+    year: 1979,
+    label: "Second oil shock",
+    category: "economic",
+    description:
+      "A renewed energy crisis prolonged cost-of-living pressure.",
     confidence: "medium",
   },
   {
@@ -310,6 +342,30 @@ export const ppiEvents: PpiEvent[] = [
     description:
       "Security concerns affected trust and social cohesion in the short term.",
     confidence: "medium",
+  },
+  {
+    year: 2001,
+    label: "9/11 attacks",
+    category: "institutional",
+    description:
+      "A major security rupture intensified fear, trust concerns, and policy shifts.",
+    confidence: "high",
+  },
+  {
+    year: 2003,
+    label: "Iraq War",
+    category: "war",
+    description:
+      "Extended conflict influenced trust and perceptions of institutional legitimacy.",
+    confidence: "high",
+  },
+  {
+    year: 2001,
+    label: "Afghanistan War",
+    category: "war",
+    description:
+      "Prolonged military engagement affected public trust and social cohesion.",
+    confidence: "high",
   },
   {
     year: 2008,
@@ -349,6 +405,22 @@ export const ppiEvents: PpiEvent[] = [
     category: "economic",
     description:
       "Rapid price increases strained real incomes and housing affordability.",
+    confidence: "high",
+  },
+  {
+    year: 2022,
+    label: "Ukraine war escalation",
+    category: "war",
+    description:
+      "Conflict heightened energy, security, and trust pressures over time.",
+    confidence: "high",
+  },
+  {
+    year: 2023,
+    label: "Gaza war escalation",
+    category: "war",
+    description:
+      "Renewed conflict increased geopolitical stress and public polarization.",
     confidence: "high",
   },
   {
