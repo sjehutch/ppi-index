@@ -97,7 +97,7 @@ export default function App() {
             aria-label="Line chart showing PPI scores and a PPI plus AI modifier line from 1850 to present."
           >
             <ResponsiveContainer>
-              <LineChart data={ppiData} margin={styles.chartMargin}>
+              <LineChart data={ppiData} margin={{ top: 12, right: 16, left: 8, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.12} />
                 <XAxis
                   dataKey="year"
@@ -192,7 +192,6 @@ const styles: Record<string, CSSProperties> = {
     width: "100%",
     height: 420,
   },
-  chartMargin: { top: 12, right: 16, left: 8, bottom: 8 },
   note: {
     marginTop: 12,
     fontSize: 12,
