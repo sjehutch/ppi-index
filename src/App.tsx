@@ -8,6 +8,7 @@ import {
   LineChart,
   ReferenceArea,
   ReferenceLine,
+  Scatter,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -16,7 +17,7 @@ import {
 
 /**
  * Like you're 10:
- * - This is a "Political Pressure Index" chart from 1950 to now.
+ * - This is a "Political Pressure Index" chart from 1900 to now.
  * - The colored horizontal bands are "zones" (stable → reform → protest → pre-revolution).
  * - The solid line is the main PPI score.
  * - Starting around 2022, we show 2 dashed lines = an "AI cone":
@@ -38,17 +39,34 @@ type PpiPoint = {
   aiHigh?: number; // AI increases pressure path
 };
 
-// Demo dataset: sparse but “feels” historically plausible.
-// You can add more points (e.g., every year) later.
-// Recharts will draw lines between points.
-const DATA: PpiPoint[] = [
+type PpiAnchor = {
+  year: number;
+  ppi: number;
+  aiLow?: number;
+  aiHigh?: number;
+};
+
+// Demo anchor points: sparse but “feels” historically plausible.
+// We expand these to yearly points for a smoother line.
+const ANCHORS: PpiAnchor[] = [
+  { year: 1900, ppi: 32 },
+  { year: 1910, ppi: 36 },
+  { year: 1914, ppi: 48 },
+  { year: 1918, ppi: 60 },
+  { year: 1920, ppi: 50 },
+  { year: 1929, ppi: 70 },
+  { year: 1933, ppi: 78 },
+  { year: 1939, ppi: 65 },
+  { year: 1945, ppi: 52 },
   { year: 1950, ppi: 38 },
   { year: 1960, ppi: 35 },
   { year: 1970, ppi: 42 },
+  { year: 1973, ppi: 52 },
   { year: 1975, ppi: 55 },
   { year: 1980, ppi: 58 },
   { year: 1990, ppi: 45 },
   { year: 2000, ppi: 43 },
+  { year: 2001, ppi: 50 },
   { year: 2008, ppi: 60 },
   { year: 2012, ppi: 57 },
   { year: 2016, ppi: 62 },
@@ -58,16 +76,120 @@ const DATA: PpiPoint[] = [
   { year: 2026, ppi: 73, aiLow: 63, aiHigh: 90 },
 ];
 
+const START_YEAR = 1900;
+const END_YEAR = 2026;
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+function interpolateAnchors(anchors: PpiAnchor[]): PpiPoint[] {
+  const sorted = [...anchors].sort((a, b) => a.year - b.year);
+  const output: PpiPoint[] = [];
+  for (let i = 0; i < sorted.length - 1; i += 1) {
+    const left = sorted[i];
+    const right = sorted[i + 1];
+    const span = right.year - left.year;
+    for (let year = left.year; year <= right.year; year += 1) {
+      if (i > 0 && year === left.year) {
+        continue;
+      }
+      const t = span === 0 ? 0 : (year - left.year) / span;
+      const ppi = lerp(left.ppi, right.ppi, t);
+      const aiLow =
+        left.aiLow !== undefined && right.aiLow !== undefined
+          ? lerp(left.aiLow, right.aiLow, t)
+          : year >= 2022
+          ? left.aiLow ?? right.aiLow
+          : undefined;
+      const aiHigh =
+        left.aiHigh !== undefined && right.aiHigh !== undefined
+          ? lerp(left.aiHigh, right.aiHigh, t)
+          : year >= 2022
+          ? left.aiHigh ?? right.aiHigh
+          : undefined;
+      output.push({ year, ppi, aiLow, aiHigh });
+    }
+  }
+  return output;
+}
+
+const DATA = interpolateAnchors(ANCHORS).filter(
+  (point) => point.year >= START_YEAR && point.year <= END_YEAR
+);
+
 // “Spark events” = vertical markers.
 // Like you're 10: these are “things that happened” that can trigger visible conflict
 // when pressure is already high.
 const EVENTS: Array<{ year: number; label: string }> = [
+  { year: 1907, label: "Panic of 1907" },
+  { year: 1914, label: "WWI begins" },
+  { year: 1918, label: "Influenza pandemic" },
+  { year: 1929, label: "Wall St crash" },
+  { year: 1933, label: "Great Depression" },
+  { year: 1939, label: "WWII begins" },
+  { year: 1947, label: "Cold War order" },
+  { year: 1956, label: "Automation era" },
   { year: 1968, label: "1968 protests" },
   { year: 1973, label: "Oil shock" },
+  { year: 1979, label: "Stagflation peak" },
+  { year: 1989, label: "Cold War ends" },
+  { year: 2001, label: "9/11 shock" },
   { year: 2008, label: "2008 crash" },
   { year: 2020, label: "COVID shock" },
   { year: 2022, label: "Inflation spike" },
   { year: 2023, label: "AI mainstream" },
+];
+
+const EVENT_COMPANIES: Record<string, string[]> = {
+  "Panic of 1907": ["J.P. Morgan & Co."],
+  "WWI begins": ["U.S. Steel", "DuPont"],
+  "Influenza pandemic": ["Johnson & Johnson"],
+  "Wall St crash": ["Goldman Sachs", "JPMorgan"],
+  "Great Depression": ["Procter & Gamble"],
+  "WWII begins": ["Boeing", "General Motors"],
+  "Cold War order": ["Lockheed", "Raytheon"],
+  "Automation era": ["IBM", "General Electric"],
+  "1968 protests": ["Coca-Cola", "Unilever"],
+  "Oil shock": ["Exxon", "Shell"],
+  "Stagflation peak": ["Exxon", "Chevron"],
+  "Cold War ends": ["Microsoft", "Intel"],
+  "9/11 shock": ["Lockheed Martin", "Northrop Grumman"],
+  "2008 crash": ["JPMorgan", "Wells Fargo"],
+  "COVID shock": ["Pfizer", "Moderna"],
+  "Inflation spike": ["Exxon", "Chevron"],
+  "AI mainstream": ["NVIDIA", "Microsoft"],
+};
+
+const EVENT_LABELS: Record<number, string[]> = EVENTS.reduce(
+  (acc, event) => {
+    acc[event.year] = acc[event.year] ?? [];
+    acc[event.year].push(event.label);
+    return acc;
+  },
+  {} as Record<number, string[]>
+);
+
+const EVENT_POINTS = EVENTS.map((event) => ({
+  year: event.year,
+  eventY: 98,
+  label: event.label,
+}));
+
+const DECADE_DRIVERS: Array<{ year: number; label: string }> = [
+  { year: 1900, label: "Income↓, Labor↑ (industrial churn)" },
+  { year: 1910, label: "Income↓, Trust↓ (pre-war strain)" },
+  { year: 1920, label: "Housing↑, Inequality↑ (boom/bust)" },
+  { year: 1930, label: "Income↓, Labor↑ (Depression)" },
+  { year: 1940, label: "Trust↑, Labor↑ (war mobilization)" },
+  { year: 1950, label: "Income↑, Housing↑ (postwar growth)" },
+  { year: 1960, label: "Labor↑, Trust↓ (social unrest)" },
+  { year: 1970, label: "Income↓, Housing↑ (oil shocks)" },
+  { year: 1980, label: "Inequality↑, Trust↓ (restructuring)" },
+  { year: 1990, label: "Income↑, Housing↑ (globalization)" },
+  { year: 2000, label: "Trust↓, Inequality↑ (tech/finance)" },
+  { year: 2010, label: "Income↓, Labor↑ (post-crisis)" },
+  { year: 2020, label: "Housing↑, Trust↓ (pandemic/inflation)" },
 ];
 
 /**
@@ -83,6 +205,67 @@ function formatNumber(value: unknown): ReactNode {
   return String(value);
 }
 
+function renderTooltip({
+  active,
+  label,
+  payload,
+}: {
+  active?: boolean;
+  label?: number | string;
+  payload?: Array<{
+    name?: string;
+    value?: number;
+    dataKey?: string;
+    payload?: { label?: string };
+  }>;
+}): ReactNode {
+  if (!active) {
+    return null;
+  }
+  const year = typeof label === "number" ? label : Number(label);
+  const eventsForYear = Number.isFinite(year) ? EVENT_LABELS[year] : undefined;
+  const series = (payload ?? []).filter(
+    (entry) =>
+      entry.dataKey &&
+      entry.dataKey !== "eventY" &&
+      entry.dataKey !== "year"
+  );
+
+  return (
+    <div style={styles.tooltip}>
+      <div style={styles.tooltipTitle}>Year {label}</div>
+      {series.length > 0 && (
+        <div style={styles.tooltipSection}>
+          {series.map((entry) => (
+            <div key={entry.dataKey} style={styles.tooltipRow}>
+              <span>{entry.name}</span>
+              <span>{formatNumber(entry.value)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {eventsForYear?.length && (
+        <div style={styles.tooltipSection}>
+          <div style={styles.tooltipLabel}>Events</div>
+          {eventsForYear.map((event) => {
+            const companies = EVENT_COMPANIES[event];
+            return (
+              <div key={`${label}-${event}`} style={styles.tooltipEvent}>
+                <div>{event}</div>
+                {companies?.length ? (
+                  <div style={styles.tooltipCompanies}>
+                    Companies: {companies.join(", ")}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <div style={styles.page}>
@@ -91,7 +274,7 @@ export default function App() {
           <div>
             <h1 style={styles.h1}>Political Pressure Index (PPI)</h1>
             <p style={styles.sub}>
-              1950 → today • Zones + spark events + AI wildcard cone (demo data)
+              1900 → today • Zones + spark events + AI wildcard cone (demo data)
             </p>
           </div>
 
@@ -123,8 +306,8 @@ export default function App() {
                 <XAxis
                   dataKey="year"
                   type="number"
-                  domain={[1950, 2026]}
-                  tickCount={9}
+                  domain={[START_YEAR, END_YEAR]}
+                  tickCount={10}
                   stroke="rgba(255,255,255,0.7)"
                 />
 
@@ -136,16 +319,7 @@ export default function App() {
                 />
 
                 {/* Tooltip: shows values when you hover */}
-                <Tooltip
-                  formatter={(value) => formatNumber(value)}
-                  contentStyle={{
-                    background: "rgba(20,20,24,0.95)",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    borderRadius: 12,
-                    color: "rgba(255,255,255,0.9)",
-                  }}
-                  labelStyle={{ color: "rgba(255,255,255,0.8)" }}
-                />
+                <Tooltip content={renderTooltip} />
 
                 <Legend />
 
@@ -204,6 +378,33 @@ export default function App() {
                       position: "insideTopLeft",
                       fill: "rgba(255,255,255,0.55)",
                       fontSize: 11,
+                      angle: -90,
+                      offset: 10,
+                    }}
+                  />
+                ))}
+
+                <Scatter
+                  data={EVENT_POINTS}
+                  dataKey="eventY"
+                  name="Events"
+                  fill="rgba(250, 204, 21, 0.9)"
+                  stroke="rgba(17, 24, 39, 0.6)"
+                  strokeWidth={1}
+                />
+
+                {/* Decade drivers: tied to framework inputs */}
+                {DECADE_DRIVERS.map((d) => (
+                  <ReferenceLine
+                    key={`driver-${d.year}`}
+                    x={d.year}
+                    stroke="rgba(125,211,252,0.18)"
+                    strokeDasharray="2 8"
+                    label={{
+                      value: d.label,
+                      position: "insideBottomLeft",
+                      fill: "rgba(125,211,252,0.65)",
+                      fontSize: 10,
                       angle: -90,
                       offset: 10,
                     }}
@@ -409,5 +610,43 @@ const styles: Record<string, React.CSSProperties> = {
   },
   footerNote: {
     padding: "6px 2px",
+  },
+  tooltip: {
+    background: "rgba(20,20,24,0.95)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: 12,
+    color: "rgba(255,255,255,0.9)",
+    padding: "10px 12px",
+    fontSize: 12,
+    minWidth: 160,
+  },
+  tooltipTitle: {
+    fontWeight: 700,
+    marginBottom: 6,
+  },
+  tooltipSection: {
+    marginTop: 6,
+    paddingTop: 6,
+    borderTop: "1px solid rgba(255,255,255,0.08)",
+  },
+  tooltipRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  tooltipLabel: {
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    color: "rgba(255,255,255,0.6)",
+    marginBottom: 4,
+  },
+  tooltipEvent: {
+    color: "rgba(255,255,255,0.85)",
+  },
+  tooltipCompanies: {
+    color: "rgba(255,255,255,0.65)",
+    fontSize: 11,
+    marginTop: 2,
   },
 };
