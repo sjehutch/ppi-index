@@ -1,4 +1,5 @@
 // src/App.tsx
+import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 import type {
@@ -9,6 +10,7 @@ import type { ScatterCustomizedShape } from "recharts/types/cartesian/Scatter";
 
 import {
   CartesianGrid,
+  Brush,
   Legend,
   Line,
   LineChart,
@@ -201,6 +203,9 @@ const EVENT_POINTS = EVENTS.map((event) => {
   };
 });
 
+const ZOOM_WINDOW = 2;
+const SELECTION_FILL = "rgba(255,255,255,0.08)";
+
 const DECADE_DRIVERS: Array<{ year: number; label: string }> = [
   { year: 1900, label: "Income↓, Labor↑ (industrial churn)" },
   { year: 1910, label: "Income↓, Trust↓ (pre-war strain)" },
@@ -323,6 +328,74 @@ const EventDot: ScatterCustomizedShape = (props: unknown) => {
 };
 
 export default function App() {
+  const yearIndex = useMemo(
+    () => new Map(DATA.map((point, index) => [point.year, index])),
+    []
+  );
+  const [zoomRange, setZoomRange] = useState<{
+    startIndex: number;
+    endIndex: number;
+  } | null>(null);
+  const [dragStart, setDragStart] = useState<number | null>(null);
+  const [dragEnd, setDragEnd] = useState<number | null>(null);
+  const zoomLabel = zoomRange
+    ? `${DATA[zoomRange.startIndex]?.year}–${DATA[zoomRange.endIndex]?.year}`
+    : null;
+
+  const handleEventClick = (point: unknown) => {
+    const year = (point as { year?: number })?.year;
+    if (year === undefined) {
+      return;
+    }
+    const index = yearIndex.get(year);
+    if (index === undefined) {
+      return;
+    }
+    const maxIndex = DATA.length - 1;
+    const startIndex = Math.max(0, index - ZOOM_WINDOW);
+    const endIndex = Math.min(maxIndex, index + ZOOM_WINDOW);
+    setZoomRange({ startIndex, endIndex });
+  };
+
+  const handleMouseDown = (event: { activeLabel?: number }) => {
+    if (typeof event.activeLabel !== "number") {
+      return;
+    }
+    setDragStart(event.activeLabel);
+    setDragEnd(event.activeLabel);
+  };
+
+  const handleMouseMove = (event: { activeLabel?: number }) => {
+    if (dragStart === null || typeof event.activeLabel !== "number") {
+      return;
+    }
+    setDragEnd(event.activeLabel);
+  };
+
+  const finalizeZoom = () => {
+    if (dragStart === null || dragEnd === null) {
+      setDragStart(null);
+      setDragEnd(null);
+      return;
+    }
+    const startYear = Math.min(dragStart, dragEnd);
+    const endYear = Math.max(dragStart, dragEnd);
+    const startIndex = yearIndex.get(startYear);
+    const endIndex = yearIndex.get(endYear);
+    setDragStart(null);
+    setDragEnd(null);
+    if (startIndex === undefined || endIndex === undefined) {
+      return;
+    }
+    if (startIndex === endIndex) {
+      return;
+    }
+    setZoomRange({
+      startIndex: Math.max(0, startIndex),
+      endIndex: Math.min(DATA.length - 1, endIndex),
+    });
+  };
+
   return (
     <div style={styles.page}>
       <div style={styles.shell}>
@@ -348,6 +421,20 @@ export default function App() {
                 Solid = base PPI • Dashed = AI cone (post-2022)
               </div>
             </div>
+            <div style={styles.zoomControls}>
+              <div style={styles.zoomLabel}>
+                {zoomLabel ? `Zoomed: ${zoomLabel}` : "Full range"}
+              </div>
+              {zoomRange ? (
+                <button
+                  type="button"
+                  onClick={() => setZoomRange(null)}
+                  style={styles.zoomButton}
+                >
+                  Reset zoom
+                </button>
+              ) : null}
+            </div>
           </div>
 
           <div style={{ width: "100%", height: 420 }}>
@@ -355,6 +442,10 @@ export default function App() {
               <LineChart
                 data={DATA}
                 margin={{ top: 8, right: 16, left: 8, bottom: 8 }}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={finalizeZoom}
+                onMouseLeave={finalizeZoom}
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
@@ -426,12 +517,23 @@ export default function App() {
                 <ReferenceLine y={70} stroke={COLORS.threshold} />
                 <ReferenceLine y={85} stroke={COLORS.threshold} />
 
+                {dragStart !== null && dragEnd !== null && (
+                  <ReferenceArea
+                    x1={Math.min(dragStart, dragEnd)}
+                    x2={Math.max(dragStart, dragEnd)}
+                    fill={SELECTION_FILL}
+                    strokeOpacity={0}
+                  />
+                )}
+
                 <Scatter
                   data={EVENT_POINTS}
                   dataKey="eventY"
                   name="Events"
                   shape={EventDot}
                   isAnimationActive={false}
+                  cursor="pointer"
+                  onClick={handleEventClick}
                 />
 
                 {/* ===== Main PPI line ===== */}
@@ -469,6 +571,29 @@ export default function App() {
                   strokeDasharray="6 6"
                   dot={false}
                   connectNulls
+                />
+
+                <Brush
+                  dataKey="year"
+                  height={24}
+                  stroke={COLORS.threshold}
+                  travellerWidth={10}
+                  fill="rgba(255,255,255,0.04)"
+                  startIndex={zoomRange?.startIndex}
+                  endIndex={zoomRange?.endIndex}
+                  onChange={(range) => {
+                    if (
+                      range?.startIndex === undefined ||
+                      range?.endIndex === undefined
+                    ) {
+                      setZoomRange(null);
+                      return;
+                    }
+                    setZoomRange({
+                      startIndex: range.startIndex,
+                      endIndex: range.endIndex,
+                    });
+                  }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -609,6 +734,27 @@ const styles: Record<string, React.CSSProperties> = {
     marginTop: 4,
     fontSize: 12,
     color: "rgba(255,255,255,0.65)",
+  },
+  zoomControls: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+  },
+  zoomLabel: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.7)",
+  },
+  zoomButton: {
+    appearance: "none",
+    border: "1px solid rgba(255,255,255,0.2)",
+    background: "rgba(255,255,255,0.06)",
+    color: "rgba(255,255,255,0.9)",
+    padding: "6px 10px",
+    borderRadius: 999,
+    fontSize: 12,
+    cursor: "pointer",
   },
   legendHelp: {
     display: "flex",
