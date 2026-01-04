@@ -1,7 +1,11 @@
 // src/App.tsx
 import type { ReactNode } from "react";
 
-import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
+import type {
+  NameType,
+  ValueType,
+} from "recharts/types/component/DefaultTooltipContent";
+import type { ScatterCustomizedShape } from "recharts/types/cartesian/Scatter";
 
 import {
   CartesianGrid,
@@ -16,7 +20,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { TooltipProps } from "recharts";
+import type { TooltipContentProps } from "recharts";
 
 /**
  * Like you're 10:
@@ -238,7 +242,7 @@ function renderTooltip({
   active,
   label,
   payload,
-}: TooltipProps<ValueType, NameType>): ReactNode {
+}: TooltipContentProps<ValueType, NameType>): ReactNode {
   if (!active) {
     return null;
   }
@@ -248,12 +252,10 @@ function renderTooltip({
     Number.isFinite(year) ? Math.floor(Number(year) / 10) * 10 : undefined;
   const decadeDriver =
     decade !== undefined ? DECADE_DRIVER_LABELS[decade] : undefined;
-  const series = (payload ?? []).filter(
-    (entry) =>
-      entry.dataKey &&
-      entry.dataKey !== "eventY" &&
-      entry.dataKey !== "year"
-  );
+  const series = (payload ?? []).filter((entry) => {
+    const dataKey = entry.dataKey?.toString();
+    return dataKey && dataKey !== "eventY" && dataKey !== "year";
+  });
 
   return (
     <div style={styles.tooltip}>
@@ -296,13 +298,8 @@ function renderTooltip({
   );
 }
 
-function EventDot({
-  cx,
-  cy,
-}: {
-  cx?: number;
-  cy?: number;
-}): ReactNode {
+const EventDot: ScatterCustomizedShape = (props) => {
+  const { cx, cy } = props as { cx?: number; cy?: number };
   if (cx === undefined || cy === undefined) {
     return null;
   }
@@ -324,7 +321,7 @@ function EventDot({
       />
     </>
   );
-}
+};
 
 export default function App() {
   return (
