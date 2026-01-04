@@ -37,6 +37,7 @@ export type PpiDataPoint = {
   aiAdjusted: number;
   aiModifier: number;
   confidence: Confidence;
+  oilInfluence: "up" | "down" | "flat" | "unknown";
 };
 
 export const START_YEAR = 1850;
@@ -62,6 +63,39 @@ const computeAiModifier = (year: number, aiSignal = 0) => {
     return 0;
   }
   return Math.round(aiSignal * 8);
+};
+
+const computeOilInfluence = (
+  year: number
+): "up" | "down" | "flat" | "unknown" => {
+  if (year >= 1850 && year <= 1910) {
+    return "flat";
+  }
+  if (year >= 1911 && year <= 1945) {
+    return "up";
+  }
+  if (year >= 1946 && year <= 1970) {
+    return "up";
+  }
+  if (year >= 1971 && year <= 1985) {
+    return "down";
+  }
+  if (year >= 1986 && year <= 2007) {
+    return "flat";
+  }
+  if (year >= 2008 && year <= 2013) {
+    return "down";
+  }
+  if (year >= 2014 && year <= 2019) {
+    return "up";
+  }
+  if (year === 2020) {
+    return "down";
+  }
+  if (year >= 2021 && year <= 2023) {
+    return "flat";
+  }
+  return "unknown";
 };
 
 const ANCHORS: PpiAnchor[] = [
@@ -187,6 +221,7 @@ export const ppiData: PpiDataPoint[] = ANCHORS.map((anchor) => {
     aiAdjusted,
     aiModifier,
     confidence: anchor.confidence,
+    oilInfluence: computeOilInfluence(anchor.year),
   };
 });
 

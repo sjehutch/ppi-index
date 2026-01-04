@@ -23,6 +23,7 @@ type TooltipPayload = Payload<ValueType, NameType> & {
   payload?: {
     confidence?: "low" | "medium" | "high";
     aiModifier?: number;
+    oilInfluence?: "up" | "down" | "flat" | "unknown";
   };
 };
 
@@ -37,6 +38,7 @@ function PpiTooltip({
   const primary = payload[0] as TooltipPayload;
   const confidence = primary.payload?.confidence ?? "unknown";
   const aiModifier = primary.payload?.aiModifier ?? 0;
+  const oilInfluence = primary.payload?.oilInfluence ?? "unknown";
   const year = typeof label === "number" ? label : Number(label);
   const decadeStart = Number.isFinite(year) ? Math.floor(year / 10) * 10 : null;
   const eventsForYear =
@@ -58,6 +60,9 @@ function PpiTooltip({
       <div style={styles.tooltipMeta}>
         Confidence: {confidence} | AI modifier: {aiModifier >= 0 ? "+" : ""}
         {aiModifier}
+      </div>
+      <div style={styles.tooltipMeta}>
+        U.S. oil influence: {oilInfluence}
       </div>
       {eventsForYear.length > 0 && (
         <div style={styles.tooltipSection}>
