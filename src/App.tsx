@@ -298,22 +298,21 @@ function renderTooltip({
   );
 }
 
-const EventDot: ScatterCustomizedShape = (props) => {
+const EventDot: ScatterCustomizedShape = (props: unknown) => {
   const { cx, cy } = props as { cx?: number; cy?: number };
-  if (cx === undefined || cy === undefined) {
-    return null;
-  }
+  const safeCx = cx ?? 0;
+  const safeCy = cy ?? 0;
   return (
     <>
       <circle
-        cx={cx}
-        cy={cy}
+        cx={safeCx}
+        cy={safeCy}
         r={9}
         fill={COLORS.eventGlow}
       />
       <circle
-        cx={cx}
-        cy={cy}
+        cx={safeCx}
+        cy={safeCy}
         r={5}
         fill={COLORS.eventDot}
         stroke={COLORS.eventStroke}
